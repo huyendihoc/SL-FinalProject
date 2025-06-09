@@ -1,2 +1,2 @@
 # SL-FinalProject
-Final Project for Statistics Learning subject - FIT@HCMUS
+Final Project for Statistical Learning subject - FIT@HCMUS
