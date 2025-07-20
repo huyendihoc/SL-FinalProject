@@ -2,11 +2,11 @@ import './App.css';
 import { useState } from 'react';
 import Header from './components/Header' 
 import Table from './components/Table' 
-import { fetchMovie } from './service/apiService';
+import { fetchMovie } from './service/api';
 
 const App = () => {
 
-  const [platform, setPlatform] = useState('IMDb');
+  const [platform, setPlatform] = useState('imdb');
   const [movie, setMovie] = useState('');
   const [reviews, setReviews] = useState([])
 

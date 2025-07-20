@@ -6,8 +6,9 @@ import { faSearch } from '@fortawesome/free-solid-svg-icons';
 const Header = ({platform, setPlatform, movie, setMovie, handleSearch}) => {
     const onClick = () => {
         if (movie.trim() !== '' && platform !== ''){
-            // handleSearch();
+            handleSearch();
             console.log(`${movie} from ${platform}`);
+            setMovie('')
         }
     }
 

@@ -1,16 +1,8 @@
 import { FaSortUp } from 'react-icons/fa';
 
-const Table = () => {
-  const comments = [
-    { text: "Chưa đủ wow với mình lắm", date: "28/06/2025", sentiment: "NEGATIVE" },
-    { text: "Phim rất trình", date: "27/06/2025", sentiment: "POSITIVE" },
-    { text: "Màu phim đẹp nhưng nội dung hơi cũ", date: "25/06/2025", sentiment: "NEUTRAL" },
-    { text: "Nổi da gà, độc lạ Bình Gold", date: "24/06/2025", sentiment: "POSITIVE" },
-    { text: "Thà coi phim ***", date: "23/06/2025", sentiment: "NEGATIVE" },
-    { text: "Phim qqjz", date: "22/06/2025", sentiment: "NEGATIVE" },
-    { text: "Đáng xem", date: "21/06/2025", sentiment: "POSITIVE" },
-  ];
-
+const Table = ({reviews}) => {  
+  if (reviews.length == 0)
+    return <table className='comments-table'></table>
   return (
     <table className="comments-table">
       <thead>
@@ -21,13 +13,13 @@ const Table = () => {
         </tr>
       </thead>
       <tbody>
-        {comments.map((comment, index) => (
+        {reviews.map((review, index) => (
           <tr key={index}>
-            <td>{comment.text}</td>
-            <td>{comment.date}</td>
+            <td>{review.Comment}</td>
+            <td>{review.Date}</td>
             <td>
-              <span className={`sentiment ${comment.sentiment.toLowerCase()}`}>
-                {comment.sentiment}
+              <span className={`sentiment ${review.Sentiment.toLowerCase()}`}>
+                {review.Sentiment}
               </span>
             </td>
           </tr>

@@ -7,9 +7,9 @@ const Dropdown = ({platform, setPlatform}) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const platforms = [
-    { name: 'IMDb', logo: imdbLogo },
-    { name: 'Rotten Tomatoes', logo: rottenTomatoesLogo },
-    { name: 'Metacritic', logo: metacriticLogo },
+    { name: 'imdb', logo: imdbLogo },
+    { name: 'rotten-tomatoes', logo: rottenTomatoesLogo },
+    { name: 'metacritic', logo: metacriticLogo },
   ];
 
   const toggleDropdown = () => setIsOpen(!isOpen);
