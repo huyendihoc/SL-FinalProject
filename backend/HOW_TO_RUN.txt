@@ -1,0 +1,4 @@
+1. create a .env file based on .env.example
+2. run "cd backend"
+3. run "pip install -r requirements.txt"
+4. run "python app.py"
