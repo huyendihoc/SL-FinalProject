@@ -5,6 +5,8 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from dotenv import load_dotenv
+import re
+import json
 
 load_dotenv()
 
@@ -25,7 +27,7 @@ def get_imdb_reviews(title:str):
 
         res = requests.get(url, params=params, headers=headers)
         if (res.status_code != 200):
-            return {'error': 'API error'}
+            return {'error': f'API error: {res.status_code}'}
         return res.json()['data']['mainSearch']['edges'][0]['node']['entity']
     
     movie = search_movie()
@@ -45,7 +47,7 @@ def get_imdb_reviews(title:str):
         }
         res = requests.get(url, params=params, headers=headers)
         if res.status_code != 200:
-            return {'error': 'API error'}
+            return {'error': f'API error: {res.status_code}'}
         return res.json()['data']['title']['featuredReviews']['edges']
     
     review_list = get_reviews()
@@ -83,7 +85,7 @@ def get_rttm_reviews(title:str, mode:str='user', limit:int=5, offset:int=0):
         headers = {'User-Agent': 'Mozilla/5.0'}
         res = requests.get(url, params=params, headers=headers)
         if res.status_code != 200:
-            return {'error': 'Failed to get response'}
+            return {'error': f'Failed to get response: {res.status_code}'}
         soup = BeautifulSoup(res.text, 'html.parser')
 
         movie = soup.find('search-page-media-row')
@@ -124,6 +126,7 @@ def get_rttm_reviews(title:str, mode:str='user', limit:int=5, offset:int=0):
                     date = date_tag.text.strip()
                     reviews.append({
                         'Title': title,
+                        'Platform': 'Rotten Tomatoes',
                         'Date': date,
                         'Comment': review,
                         'Type': 'Critic' if mode =='critic' else 'Review',
@@ -148,7 +151,7 @@ def get_metacritic_reviews(title:str, mode:str='user', limit:int=5, offset:int=0
         headers = {'User-Agent': 'Mozilla/5.0'}
         res = requests.get(url, headers=headers)
         if res.status_code != 200:
-            return {'error': 'Failed to get response'}
+            return {'error': f'Failed to get response: {res.status_code}'}
         
         soup = BeautifulSoup(res.text, 'html.parser')
         movie = soup.find('div', class_='g-grid-container u-grid-columns')
@@ -162,57 +165,55 @@ def get_metacritic_reviews(title:str, mode:str='user', limit:int=5, offset:int=0
             'suburl': suburl
         }
     
+    def fix_invalid_json(json_str):
+        json_str = re.sub(r'([{,]\s*)([a-zA-Z_][\w]*)(\s*:)', r'\1"\2"\3', json_str)
+        json_str = json_str.replace('\\u002F', '/')
+        lowercase = [chr(i) for i in range(ord('a'), ord('z') + 1)]
+        uppercase = [chr(i) for i in range(ord('A'), ord('D') + 1)]
+        invalid_values = lowercase + uppercase
+        for val in invalid_values:
+            json_str = re.sub(rf':{val}', rf':"{val}"', json_str)
+            json_str = re.sub(rf':\[*{val}\]*', rf':["{val}"]', json_str)
+        
+        return json_str
+    
     def get_reviews(title, url):
         if mode == 'user':
             url = url + 'user-reviews/'
         else: url = url + 'critic-reviews/'
         url = url + '?sort-by=Recently%20Added'
 
-        opts = Options()
-        opts.add_argument('--headless=new')
-        opts.add_argument('--window-size=1920,1080')
-        opts.add_argument('--disable-gpu')
-        opts.add_argument('--no-sandbox')
-        opts.add_argument('--disable-dev-shm-usage')
-        opts.add_argument('--disable-extensions')
-        opts.add_argument('--disable-software-rasterizer')
-        opts.add_argument('--disable-logging')
-        opts.add_argument('--log-level=3')
-        opts.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36')
-        
-        prefs = {
-            'profile.managed_default_content_settings.images': 2,
-            'profile.default_content_setting_values.javascript': 1,
+        headers = {
+            'User-Agent': 'Mozilla/5.0'
         }
-        opts.add_experimental_option('prefs', prefs)
 
-        browser = webdriver.Chrome(options=opts)
-        browser.get(url)
-        html_text = browser.page_source
-        browser.quit()
-        soup = BeautifulSoup(html_text, 'html.parser')
-        
-        review_elements = soup.find_all('div', class_ = 'c-siteReview_main')
-        if not review_elements:
-            return {'error': 'No reviews found'}
+        res = requests.get(url, headers=headers)
+        if res.status_code != 200:
+            return {'error': f'Failed to get response: {res.status_code}'}
+        soup = BeautifulSoup(res.text, 'html.parser')
+        script_tag = soup.find('script', string=re.compile('window\.__NUXT__'))
+        match = re.search(r'm.components=(\[.*?\]);m.footer', script_tag.string, re.DOTALL)
+        if not match:
+            return {'error': 'Scrape error'}
+        json_str = match.group(1)
+        json_str = fix_invalid_json(json_str)
+        data = json.loads(json_str)
+        review_elements = data[2]['items']
         reviews = []
         try:
-            for element in review_elements[offset:offset+limit]:
-                date_tag = element.find('div', class_='c-siteReviewHeader_reviewDate')
-                review_tag = element.find('div', class_='c-siteReview_quote')
-                date = date_tag.text.strip()
-                review = review_tag.find('span').text.strip()
-                reviews.append({
-                    'Title': title,
-                    'Date': date,
-                    'Comment': review,
-                    'Type': 'Critic' if mode =='critic' else 'Review',
-                    'Sentiment': 'Positive',
-                })
+            for review in review_elements[offset:offset+limit]:
+                    reviews.append({
+                        'Title': title,
+                        'Platform': 'Metacritic',
+                        'Date': review['date'],
+                        'Comment': review['quote'],
+                        'Type': 'Critic' if mode =='critic' else 'Review',
+                        'Sentiment': 'Positive',
+                    })
         except IndexError:
             return {'error': 'Out of range'}
         return reviews
-    
+        
     result = search_movie()
     if 'error' in result:
         return result
