@@ -74,6 +74,39 @@ header {
   background-color: gray;
 }
 
+.line-clamp-4 {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.comment-content {
+  word-break: break-word;
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.show-more-button {
+  background: none;
+  border: none;
+  color: #3498db;
+  cursor: pointer;
+  padding: 5px 0;
+  font-size: 0.9em;
+  display: block;
+  margin-top: 5px;
+}
+
+.show-more-button:hover {
+  text-decoration: underline;
+}
+
+/* Căn chỉnh ô comment */
+.comments-table td {
+  vertical-align: top;
+}
+
 .custom-dropdown {
   position: relative;
   width: 500px;
