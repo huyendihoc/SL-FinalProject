@@ -12,6 +12,11 @@ cors = CORS(app)
 def index():
     return {'test': 'hello'}
 
+@app.route('/autocomplete/<string:movie>', methods=['GET'])
+@cross_origin()
+def getAutoComplete(movie):
+    return api.autoComplete(movie)
+
 @app.route('/imdb/<string:movie>', methods=['GET'])
 @cross_origin()
 def getImdb(movie):

@@ -2,16 +2,26 @@ import requests
 import os
 from datetime import datetime, timedelta, date
 from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 from dotenv import load_dotenv
-import re
-import json
 
 load_dotenv()
 
 API_KEY = os.getenv('API_KEY')
 METACRITIC_KEY = os.getenv('METACRITIC_KEY')
+OMDB_KEY = os.getenv('OMDB_KEY')
+
+def autoComplete(title:str):
+    url = f'https://omdbapi.com/'
+    params = {
+        'apikey': OMDB_KEY,
+        's': title,
+        'type': 'movie'
+    }
+    res = requests.get(url, params=params)
+    if res.status_code != 200:
+        return {'error': f'API error: {res.status_code}'}
+    results = res.json()['Search']
+    return sorted(results, key=lambda x: x['Year'], reverse=True)[0:5]
 
 def get_imdb_reviews(title:str):
 
@@ -160,13 +170,11 @@ def get_metacritic_reviews(title:str, limit:int=5, offset:int=0):
             return {'error': f'Cannot find movie named {title}'}
         tag = movie.find('a', {'data-testid': 'search-result-item'})
         suburl = tag['href']
-        movie_title = tag.find('p').text.strip()
         return {
-            'title': movie_title,
             'suburl': suburl.split('/')[2]
         }
     
-    def get_reviews(title, suburl):
+    def get_reviews(suburl):
         url = f'https://backend.metacritic.com/reviews/metacritic/user/movies/{suburl}/web'
         
         params = {
@@ -188,12 +196,11 @@ def get_metacritic_reviews(title:str, limit:int=5, offset:int=0):
         if res.status_code != 200:
             return {'error': f'Failed to get response: {res.status_code}'}
         data = res.json()['data']['items']
+        if len(data) == 0:
+            return {'error': 'No reviews found'}
         reviews = []
-        seen_ids = set()
         try:
             for review in data:
-                if review['id'] in seen_ids:
-                    continue
                 reviews.append({
                     'Title': review['reviewedProduct']['title'],
                     'Platform': 'Metacritic',
@@ -209,5 +216,6 @@ def get_metacritic_reviews(title:str, limit:int=5, offset:int=0):
     result = search_movie()
     if 'error' in result:
         return result
-    reviews = get_reviews(result['title'], result['suburl'])
+    print(result['suburl'])
+    reviews = get_reviews(result['suburl'])
     return reviews
