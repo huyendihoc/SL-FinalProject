@@ -11,6 +11,7 @@ import json
 load_dotenv()
 
 API_KEY = os.getenv('API_KEY')
+METACRITIC_KEY = os.getenv('METACRITIC_KEY')
 
 def get_imdb_reviews(title:str):
 
@@ -32,7 +33,7 @@ def get_imdb_reviews(title:str):
     
     movie = search_movie()
     if not movie:
-        return {'error': f"Cannot find movie named {movie['titleText']}"}
+        return {'error': f"Cannot find movie named {movie['titleText']['text']}"}
     
     print(movie['id'], movie['titleText']['text'])
 
@@ -144,7 +145,7 @@ def get_rttm_reviews(title:str, mode:str='user', limit:int=5, offset:int=0):
     return reviews
 
 
-def get_metacritic_reviews(title:str, mode:str='user', limit:int=5, offset:int=0):
+def get_metacritic_reviews(title:str, limit:int=5, offset:int=0):
     
     def search_movie():
         url = f'https://www.metacritic.com/search/{title}/?page=1&category=2'
@@ -162,61 +163,51 @@ def get_metacritic_reviews(title:str, mode:str='user', limit:int=5, offset:int=0
         movie_title = tag.find('p').text.strip()
         return {
             'title': movie_title,
-            'suburl': suburl
+            'suburl': suburl.split('/')[2]
         }
     
-    def fix_invalid_json(json_str):
-        json_str = re.sub(r'([{,]\s*)([a-zA-Z_][\w]*)(\s*:)', r'\1"\2"\3', json_str)
-        json_str = json_str.replace('\\u002F', '/')
-        lowercase = [chr(i) for i in range(ord('a'), ord('z') + 1)]
-        uppercase = [chr(i) for i in range(ord('A'), ord('D') + 1)]
-        invalid_values = lowercase + uppercase
-        for val in invalid_values:
-            json_str = re.sub(rf':{val}', rf':"{val}"', json_str)
-            json_str = re.sub(rf':\[*{val}\]*', rf':["{val}"]', json_str)
+    def get_reviews(title, suburl):
+        url = f'https://backend.metacritic.com/reviews/metacritic/user/movies/{suburl}/web'
         
-        return json_str
-    
-    def get_reviews(title, url):
-        if mode == 'user':
-            url = url + 'user-reviews/'
-        else: url = url + 'critic-reviews/'
-        url = url + '?sort-by=Recently%20Added'
+        params = {
+            'apiKey': METACRITIC_KEY,
+            'offset': offset,
+            'limit': limit,
+            'fiterBySentiment': 'all',
+            'sort': 'date',
+            'componentName': 'user-reviews',
+            'componentDisplay': 'user+Reviews',
+            'componentType': 'ReviewList',
+        }
 
         headers = {
             'User-Agent': 'Mozilla/5.0'
         }
 
-        res = requests.get(url, headers=headers)
+        res = requests.get(url, params=params, headers=headers)
         if res.status_code != 200:
             return {'error': f'Failed to get response: {res.status_code}'}
-        soup = BeautifulSoup(res.text, 'html.parser')
-        script_tag = soup.find('script', string=re.compile('window\.__NUXT__'))
-        match = re.search(r'm.components=(\[.*?\]);m.footer', script_tag.string, re.DOTALL)
-        if not match:
-            return {'error': 'Scrape error'}
-        json_str = match.group(1)
-        json_str = fix_invalid_json(json_str)
-        data = json.loads(json_str)
-        review_elements = data[2]['items']
+        data = res.json()['data']['items']
         reviews = []
+        seen_ids = set()
         try:
-            for review in review_elements[offset:offset+limit]:
-                    reviews.append({
-                        'Title': title,
-                        'Platform': 'Metacritic',
-                        'Date': review['date'],
-                        'Comment': review['quote'],
-                        'Type': 'Critic' if mode =='critic' else 'Review',
-                        'Sentiment': 'Positive',
-                    })
+            for review in data:
+                if review['id'] in seen_ids:
+                    continue
+                reviews.append({
+                    'Title': review['reviewedProduct']['title'],
+                    'Platform': 'Metacritic',
+                    'Date': review['date'],
+                    'Comment': review['quote'],
+                    'Type': 'Review',
+                    'Sentiment': 'Positive',
+                })
         except IndexError:
-            return {'error': 'Out of range'}
+            return {'error': 'No reviews found'}
         return reviews
         
     result = search_movie()
     if 'error' in result:
         return result
-    url = 'https://www.metacritic.com' + result['suburl']
-    reviews = get_reviews(result['title'], url)
+    reviews = get_reviews(result['title'], result['suburl'])
     return reviews
