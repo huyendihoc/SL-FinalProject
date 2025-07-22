@@ -34,7 +34,7 @@ header {
 
 .comments-table {
   margin: 50px;
-  margin-top: 100px;
+  margin-top: 30px;
   width: 1350px;
   min-height: 100%;
   border-collapse: collapse;
@@ -122,8 +122,8 @@ header {
   display: flex;
   align-items: center;
   padding: 8px;
-  background-color: rgb(31, 33, 43);
-  color: white;
+  background-color: #e0e0e0;
+  color: black;
   border-radius: 10px;
   cursor: pointer;
   justify-content: center;
@@ -140,7 +140,7 @@ header {
   top: 100%;
   left: 0;
   right: 0;
-  background-color: rgb(31, 33, 43);
+  background-color: #e0e0e0;
   border-radius: 4px;
   margin: 0;
   padding: 0;
@@ -173,7 +173,7 @@ header {
   left: 18px;
   top: 50%;
   transform: translateY(-50%);
-  color: whitesmoke;
+  color: black;
   font-size: 16px;
 }
 
@@ -194,14 +194,14 @@ header {
   height: 100%;
   font-family: 'Roboto', sans-serif;
   box-sizing: border-box;
-  background-color: rgb(31, 33, 43);
+  background-color: #e0e0e0;
   border-radius: 10px;
   border: 1px solid #333;
-  color: white;
+  color: black;
 }
 
 .search-input::placeholder {
-  color: whitesmoke;
+  color: black;
   text-align: left;
 }
 
@@ -230,4 +230,12 @@ header {
 .search-button:focus {
   outline: none;
   box-shadow: none;
+}
+
+.search-result {
+  color:	orange;
+  margin-top: 100px;
+  margin-left: 50px;
+  font-size: 28px;
+  font-family: 'Roboto', sans-serif;
 }

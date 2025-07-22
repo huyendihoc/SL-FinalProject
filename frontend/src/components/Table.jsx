@@ -1,4 +1,3 @@
-import { FaSortUp } from 'react-icons/fa';
 import { useState, useRef, useEffect } from 'react';
 
 const CommentCell = ({ comment }) => {
