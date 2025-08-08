@@ -7,4 +7,17 @@ const fetchMovie = async (movie, platform) => {
     return res.data 
 }
 
-export {fetchMovie}
+const fetchSuggestions = async(query) =>{
+    if (query.length > 2) {
+        try {
+            const res = await axios.get(`${baseURL}/autocomplete/${query}`)
+            return res.data
+        } catch (error) {
+            console.log({'error': `API error: ${error}`});
+            return [];
+        }
+    }
+    return [];
+}
+
+export {fetchMovie, fetchSuggestions}

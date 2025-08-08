@@ -1,19 +1,27 @@
 .app {
-  max-width: 1920px;
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  flex-direction: column;
   margin: 0 auto;
-  padding: 20px;
+  padding: 2vh 0px;
+  overflow: hidden;
 }
 
 header {
   position: relative;
-  width: 100%;
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  padding: 0 2vw;
   height: auto;
 }
 
 .title-background {
-  width: 100%;
   height: 150px;
   background-image: url('./assets/background.svg');
+  display: flex;
+  width: calc(100vw - 4vw);
   background-size: cover;
   background-position: center;
   margin-bottom: 20px;
@@ -29,16 +37,17 @@ header {
   font-family: 'Roboto', sans-serif;
   color: orange;
   font-weight: bold;
-  margin-left: 50px;
+  padding: 0 4vw;
 }
 
 .comments-table {
-  margin: 50px;
   margin-top: 30px;
-  width: 1350px;
+  width: calc(100vw - 12vw);
   min-height: 100%;
   border-collapse: collapse;
   border-radius: 10px;
+  align-self: center;
+  padding: 0 4vw;
   background-color: rgb(31, 33, 43);
   color: white;
 }
@@ -107,15 +116,22 @@ header {
   vertical-align: top;
 }
 
+.navigation {
+  display: flex;
+  align-items: center;
+  gap: 20vw;
+  padding: 10px 4vw;
+  width: calc(100vw - 12vw);
+  height: 42px
+}
+
 .custom-dropdown {
   position: relative;
-  width: 500px;
-  height: 42px;
+  width: 25vw;
+  height: 100%;
   font-family: Arial, sans-serif;
   display: flex;
   justify-content: center;
-  margin-top: 10px;
-  margin-left:50px;
 }
 
 .dropdown-header {
@@ -145,7 +161,7 @@ header {
   margin: 0;
   padding: 0;
   list-style: none;
-  z-index: 10;
+  z-index: 999;
   width: 100%;
 }
 
@@ -162,10 +178,12 @@ header {
   background-color: #555;
 }
 
-.navigation {
+.search {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: row;
+  gap: 5%;
+  width: 55vw;
+  height: 100%;
 }
 
 .search-icon {
@@ -179,19 +197,17 @@ header {
 
 .search-box {
   position: relative;
-  display: inline-block;
-  margin-left: 120px;
-  margin-right: 15px;
-  margin-top: 10px;
-  width: 600px;
-  height: 42px;
+  display: flex;
+  flex-direction: column;
+  width: 40vw;
+  height: 100%;
 }
 
 .search-input {
   position: relative;
   padding: 10px 10px 10px 45px;
   width: 100%;
-  height: 100%;
+  height: 42px;
   font-family: 'Roboto', sans-serif;
   box-sizing: border-box;
   background-color: #e0e0e0;
@@ -211,11 +227,13 @@ header {
 }
 
 .search-button {
+  display: flex;
+  flex-direction: column;
   height: 42px;
   color: black;
   background-color: gold;
   font-weight:bold;
-  margin-top: 10px;
+  width: 100%;
 }
 
 .search-button:hover {
@@ -233,9 +251,113 @@ header {
 }
 
 .search-result {
+  display: flex;
+  flex-direction: column;
   color:	orange;
   margin-top: 100px;
-  margin-left: 50px;
+  padding: 0 6vw;
   font-size: 28px;
   font-family: 'Roboto', sans-serif;
+}
+
+/* Search box container */
+.search-input-container {
+  position: relative;
+}
+
+/* Suggestions container */
+.suggestions-container {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: #2c2f3b;
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  max-height: 400px;
+  overflow-y: auto;
+  margin-top: 2px;
+}
+
+/* Suggestion item */
+.suggestion-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 15px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid #444;
+}
+
+.suggestion-item:hover {
+  background-color: #3d4252;
+}
+
+/* Poster image */
+.suggestion-poster {
+  width: 40px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-right: 15px;
+}
+
+/* Suggestion info */
+.suggestion-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.suggestion-title {
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 3px;
+}
+
+.suggestion-year {
+  color: #aaa;
+  font-size: 0.85em;
+}
+
+/* Scrollbar styling */
+.suggestions-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.suggestions-container::-webkit-scrollbar-track {
+  background: #2c2f3b;
+}
+
+.suggestions-container::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 4px;
+}
+
+.suggestions-container::-webkit-scrollbar-thumb:hover {
+  background: #777;
+}
+
+.loading-indicator {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #aaa;
+  font-size: 0.9em;
+}
+
+/* Poster placeholder */
+.poster-placeholder {
+  width: 40px;
+  height: 60px;
+  background-color: #3d4252;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #777;
+  font-size: 0.7em;
+  text-align: center;
+  margin-right: 15px;
 }

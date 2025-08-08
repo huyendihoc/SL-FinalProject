@@ -4,16 +4,16 @@ const Result = ({reviews}) => {
     }
     else if ("error" in reviews){
         return (
-            <div className='search-result'>
+            <span className='search-result'>
                 Result: {reviews.error}
-            </div>
+            </span>
         )
     }
     else {
         return (
-            <div className="search-result">
+            <span className="search-result">
                 Result: {reviews[0].Title} from {reviews[0].Platform}
-            </div>
+            </span>
         )
     }
 }

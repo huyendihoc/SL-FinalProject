@@ -38,7 +38,7 @@ const CommentCell = ({ comment }) => {
 
 const Table = ({ reviews }) => {
   if ((reviews.length === 0) || ('error' in reviews)) {
-    return <table className='comments-table'></table>;
+    return <></>;
   }
 
   return (
