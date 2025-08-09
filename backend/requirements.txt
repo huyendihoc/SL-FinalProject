@@ -1,6 +1,11 @@
 beautifulsoup4==4.13.4
 Flask==3.1.1
+Flask_Caching==2.3.1
 flask_cors==5.0.1
+fuzzywuzzy==0.18.0
+huggingface_hub==0.30.2
+numpy==2.3.2
 python-dotenv==1.1.1
 Requests==2.32.4
-selenium==4.34.2
+torch==2.7.0
+transformers==4.51.3
