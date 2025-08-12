@@ -1,10 +1,13 @@
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import requests
+import json
+from transformers import MarianMTModel, MarianTokenizer, AutoTokenizer, AutoModelForSequenceClassification
 import torch
 import numpy as np
 from huggingface_hub import login
 import os
 from dotenv import load_dotenv
-
+from langdetect import detect
+from langcodes import Language
 
 def getBertSentiment(reviews: str):
     load_dotenv()
