@@ -10,10 +10,11 @@ const App = () => {
   const [platform, setPlatform] = useState('imdb');
   const [movie, setMovie] = useState('');
   const [reviews, setReviews] = useState([])
+  const [id, setID] = useState('')
 
   const handleSearch = async() => {
     try {
-      const reviews = await fetchMovie(movie.trim(), platform);
+      const reviews = await fetchMovie(id.trim(), platform);
       setReviews(reviews);
     } catch(error){
       console.log(error);
@@ -27,6 +28,8 @@ const App = () => {
         setPlatform={setPlatform} 
         movie={movie}
         setMovie={setMovie}
+        id={id}
+        setID={setID}
         handleSearch={handleSearch}
       />
       <Result reviews={reviews}/>
