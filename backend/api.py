@@ -2,6 +2,8 @@ import requests
 import os
 from datetime import datetime, timedelta, date
 from bs4 import BeautifulSoup
+from fuzzywuzzy import fuzz
+from bert import getBertSentiment
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -11,211 +13,237 @@ METACRITIC_KEY = os.getenv('METACRITIC_KEY')
 OMDB_KEY = os.getenv('OMDB_KEY')
 
 def autoComplete(title:str):
-    url = f'https://omdbapi.com/'
+    url = f'https://imdb236.p.rapidapi.com/api/imdb/autocomplete'
     params = {
-        'apikey': OMDB_KEY,
-        's': title,
-        'type': 'movie'
+        'query': title
     }
-    res = requests.get(url, params=params)
+    headers = {
+        'x-rapidapi-host': 'imdb236.p.rapidapi.com',
+        'x-rapidapi-key': API_KEY,
+    }
+    res = requests.get(url, params=params, headers=headers)
     if res.status_code != 200:
         return {'error': f'API error: {res.status_code}'}
-    results = res.json()['Search']
-    return sorted(results, key=lambda x: x['Year'], reverse=True)[0:5]
+    result_list = res.json()
+    seen_ids = set()
+    results = []
+    for res in result_list:
+        if res['id'] not in seen_ids and res['type'] == 'movie':
+            score = fuzz.token_sort_ratio(title.lower(), title.lower())
+            results.append((score, {
+                "id": res['id'],
+                "Title": res['primaryTitle'],
+                "Year": res['startYear'],
+                "Type": res['type'],
+                "Poster": res['primaryImage']
+            }))
 
-def get_imdb_reviews(title:str):
+    results.sort(key=lambda x: x[0], reverse=True)
+    return [movie for _, movie in results[:5]]
 
-    def search_movie():
-        url = 'https://imdb8.p.rapidapi.com/v2/search'
-        params = {
-            'searchTerm': title,
-            'type': 'MOVIE'
-        }
-        headers = {
-            'x-rapidapi-host': 'imdb8.p.rapidapi.com',
-            'x-rapidapi-key': API_KEY,
-        }
+def getLink(imdbID: str, platform: str):
+    url = 'https://movies-ratings2.p.rapidapi.com/ratings'
+    params = {
+        'id': imdbID
+    }
+    headers = {
+        "x-rapidapi-host": "movies-ratings2.p.rapidapi.com",
+        "x-rapidapi-key": API_KEY
+    }
+    res = requests.get(url, params=params, headers=headers)
+    if res.status_code != 200:
+        return {"error": f'API error: {res.status_code}'}
+    result = res.json()['ratings']
+    if platform not in result:
+        return {'error': f"Platform not existed!"}
+    return result[platform]['url']  
 
-        res = requests.get(url, params=params, headers=headers)
-        if (res.status_code != 200):
-            return {'error': f'API error: {res.status_code}'}
-        return res.json()['data']['mainSearch']['edges'][0]['node']['entity']
+def get_imdb_reviews(id:str):
+
+    # def search_movie():
+    #     url = 'https://imdb8.p.rapidapi.com/v2/search'
+    #     params = {
+    #         'searchTerm': title,
+    #         'type': 'MOVIE'
+    #     }
+    #     headers = {
+    #         'x-rapidapi-host': 'imdb8.p.rapidapi.com',
+    #         'x-rapidapi-key': API_KEY,
+    #     }
+
+    #     res = requests.get(url, params=params, headers=headers)
+    #     if (res.status_code != 200):
+    #         return {'error': f'API error: {res.status_code}'}
+    #     return res.json()['data']['mainSearch']['edges'][0]['node']['entity']
     
-    movie = search_movie()
-    if not movie:
-        return {'error': f"Cannot find movie named {movie['titleText']['text']}"}
+    # movie = search_movie()
+    # if not movie:
+    #     return {'error': f"Cannot find movie named {movie['titleText']['text']}"}
     
-    print(movie['id'], movie['titleText']['text'])
+    # print(movie['id'], movie['titleText']['text'])
 
-    def get_reviews():
-        url = 'https://imdb8.p.rapidapi.com/title/v2/get-user-reviews-summary'
-        params = {
-            'tconst': movie['id']
-        }
-        headers = {
-            'x-rapidapi-host': 'imdb8.p.rapidapi.com',
-            'x-rapidapi-key': API_KEY
-        }
-        res = requests.get(url, params=params, headers=headers)
-        if res.status_code != 200:
-            return {'error': f'API error: {res.status_code}'}
-        return res.json()['data']['title']['featuredReviews']['edges']
-    
-    review_list = get_reviews()
+    url = 'https://imdb8.p.rapidapi.com/title/v2/get-user-reviews-summary'
+    params = {
+        'tconst':id
+    }
+    headers = {
+        'x-rapidapi-host': 'imdb8.p.rapidapi.com',
+        'x-rapidapi-key': API_KEY
+    }
+    res = requests.get(url, params=params, headers=headers)
+    if res.status_code != 200:
+        return {'error': f'API error: {res.status_code}'}
+    review_list = res.json()['data']['title']['featuredReviews']['edges']
+
     if not review_list:
         return {'error': 'No reviews found'}
     
     reviews = []
-
+    comments = []
     try:
         seen_ids = set()
         for review in review_list:
             if review['node']['id'] not in seen_ids:
                 seen_ids.add(review['node']['id'])
+                comments.append(review['node']['text']['originalText']['plainText'])
                 reviews.append({
-                    'Title': title,
+                    # 'Title': title,
                     'Platform': 'IMDb',
                     'Date': review['node']['submissionDate'],
                     'Comment': review['node']['text']['originalText']['plainText'],
                     'Type': review['node']['__typename'],
-                    'Sentiment': 'Positive'
                 })
+        sentiments = getBertSentiment(comments)
+        for r, sentiment in zip(reviews, sentiments):
+            r['Sentiment'] = sentiment
     except:
         return {'error': 'No reviews found'}
     
     return reviews
 
 
-def get_rttm_reviews(title:str, mode:str='user', limit:int=5, offset:int=0):
+def get_rttm_reviews(id:str, mode:str='user', limit:int=10, offset:int=0):
 
-    def search_movie():
-        url = f'https://www.rottentomatoes.com/search'
-        params = {
-            'search': title,
-        }
-        headers = {'User-Agent': 'Mozilla/5.0'}
-        res = requests.get(url, params=params, headers=headers)
-        if res.status_code != 200:
-            return {'error': f'Failed to get response: {res.status_code}'}
-        soup = BeautifulSoup(res.text, 'html.parser')
+    # def search_movie():
+    #     url = f'https://www.rottentomatoes.com/search'
+    #     params = {
+    #         'search': title,
+    #     }
+    #     headers = {'User-Agent': 'Mozilla/5.0'}
+    #     res = requests.get(url, params=params, headers=headers)
+    #     if res.status_code != 200:
+    #         return {'error': f'Failed to get response: {res.status_code}'}
+    #     soup = BeautifulSoup(res.text, 'html.parser')
 
-        movie = soup.find('search-page-media-row')
-        if not movie:
-            return {'error': f'Cannot find movie named {title}'}
-        tag = movie.find('a', slot='title')
-        movie_title = tag.text.strip()
-        suburl = tag['href']
-        return {
-            'title': movie_title,
-            'suburl': suburl
-        }
-    
-    def get_reviews(title, url):
-        if mode=='user':
-            url = url + "?type=user"
+    #     movie = soup.find('search-page-media-row')
+    #     if not movie:
+    #         return {'error': f'Cannot find movie named {title}'}
+    #     tag = movie.find('a', slot='title')
+    #     movie_title = tag.text.strip()
+    #     suburl = tag['href']
+    #     return {
+    #         'title': movie_title,
+    #         'suburl': suburl
+    #     }
+    url = f'https://www.rottentomatoes.com/m/{id}/reviews'
+    if mode=='user':
+        url = url + "?type=user"
 
-        headers = {'User-Agent':'Mozilla/5.0'}
-        res = requests.get(url, headers=headers)
-        soup = BeautifulSoup(res.text, 'html.parser')
-        reviews = []
+    headers = {'User-Agent':'Mozilla/5.0'}
+    res = requests.get(url, headers=headers)
+    soup = BeautifulSoup(res.text, 'html.parser')
+    reviews = []
+    comments = []
+    review_elements = soup.find_all('div', {'data-qa': 'review-item'})
 
-        review_elements = soup.find_all('div', {'data-qa': 'review-item'})
+    if not review_elements:
+        return {'error': 'No reviews found'}
+    try:
+        for element in review_elements[offset:offset+limit]:
+            if mode == 'user':
+                review_tag = element.find('p', {'data-qa': 'review-text'})
+                date_tag = element.find('span', {'data-qa': 'review-duration'})
+            else: 
+                review_tag = element.find('p', {'data-qa':'review-quote'})
+                date_tag = element.find('span', {'data-qa': 'review-date'})
 
-        if not review_elements:
-            return {'error': 'No reviews found'}
-        try:
-            for element in review_elements[offset:offset+limit]:
-                if mode == 'user':
-                    review_tag = element.find('p', {'data-qa': 'review-text'})
-                    date_tag = element.find('span', {'data-qa': 'review-duration'})
-                else: 
-                    review_tag = element.find('p', {'data-qa':'review-quote'})
-                    date_tag = element.find('span', {'data-qa': 'review-date'})
+            if review_tag and date_tag:
+                review= review_tag.text.strip()
+                date = date_tag.text.strip()
+                comments.append(review)
+                reviews.append({
+                    # 'Title': title,
+                    'Platform': 'Rotten Tomatoes',
+                    'Date': date,
+                    'Comment': review,
+                    'Type': 'Critic' if mode =='critic' else 'Review',
+                })
 
-                if review_tag and date_tag:
-                    review= review_tag.text.strip()
-                    date = date_tag.text.strip()
-                    reviews.append({
-                        'Title': title,
-                        'Platform': 'Rotten Tomatoes',
-                        'Date': date,
-                        'Comment': review,
-                        'Type': 'Critic' if mode =='critic' else 'Review',
-                        'Sentiment': 'Positive',
-                    })
-        except IndexError:
-            return {'error': 'Out of range'}
-        return reviews
-    
-    result = search_movie()
-    if 'error' in result:
-        return result
-    url = result['suburl'] + '/reviews'
-    reviews = get_reviews(result['title'], url)
+        sentiments = getBertSentiment(comments)
+        for r, sentiment in zip(reviews, sentiments):
+            r['Sentiment'] = sentiment
+        
+    except IndexError:
+        return {'error': 'Out of range'}
     return reviews
 
 
-def get_metacritic_reviews(title:str, limit:int=5, offset:int=0):
+def get_metacritic_reviews(id:str, limit:int=10, offset:int=0):
     
-    def search_movie():
-        url = f'https://www.metacritic.com/search/{title}/?page=1&category=2'
-        headers = {'User-Agent': 'Mozilla/5.0'}
-        res = requests.get(url, headers=headers)
-        if res.status_code != 200:
-            return {'error': f'Failed to get response: {res.status_code}'}
+    # def search_movie():
+    #     url = f'https://www.metacritic.com/search/{title}/?page=1&category=2'
+    #     headers = {'User-Agent': 'Mozilla/5.0'}
+    #     res = requests.get(url, headers=headers)
+    #     if res.status_code != 200:
+    #         return {'error': f'Failed to get response: {res.status_code}'}
         
-        soup = BeautifulSoup(res.text, 'html.parser')
-        movie = soup.find('div', class_='g-grid-container u-grid-columns')
-        if not movie:
-            return {'error': f'Cannot find movie named {title}'}
-        tag = movie.find('a', {'data-testid': 'search-result-item'})
-        suburl = tag['href']
-        return {
-            'suburl': suburl.split('/')[2]
-        }
+    #     soup = BeautifulSoup(res.text, 'html.parser')
+    #     movie = soup.find('div', class_='g-grid-container u-grid-columns')
+    #     if not movie:
+    #         return {'error': f'Cannot find movie named {title}'}
+    #     tag = movie.find('a', {'data-testid': 'search-result-item'})
+    #     suburl = tag['href']
+    #     return {
+    #         'suburl': suburl.split('/')[2]
+    #     }
+    url = f'https://backend.metacritic.com/reviews/metacritic/user/movies/{id}/web'
     
-    def get_reviews(suburl):
-        url = f'https://backend.metacritic.com/reviews/metacritic/user/movies/{suburl}/web'
-        
-        params = {
-            'apiKey': METACRITIC_KEY,
-            'offset': offset,
-            'limit': limit,
-            'fiterBySentiment': 'all',
-            'sort': 'date',
-            'componentName': 'user-reviews',
-            'componentDisplay': 'user+Reviews',
-            'componentType': 'ReviewList',
-        }
+    params = {
+        'apiKey': METACRITIC_KEY,
+        'offset': offset,
+        'limit': limit,
+        'fiterBySentiment': 'all',
+        'sort': 'date',
+        'componentName': 'user-reviews',
+        'componentDisplay': 'user+Reviews',
+        'componentType': 'ReviewList',
+    }
 
-        headers = {
-            'User-Agent': 'Mozilla/5.0'
-        }
+    headers = {
+        'User-Agent': 'Mozilla/5.0'
+    }
 
-        res = requests.get(url, params=params, headers=headers)
-        if res.status_code != 200:
-            return {'error': f'Failed to get response: {res.status_code}'}
-        data = res.json()['data']['items']
-        if len(data) == 0:
-            return {'error': 'No reviews found'}
-        reviews = []
-        try:
-            for review in data:
-                reviews.append({
-                    'Title': review['reviewedProduct']['title'],
-                    'Platform': 'Metacritic',
-                    'Date': review['date'],
-                    'Comment': review['quote'],
-                    'Type': 'Review',
-                    'Sentiment': 'Positive',
-                })
-        except IndexError:
-            return {'error': 'No reviews found'}
-        return reviews
-        
-    result = search_movie()
-    if 'error' in result:
-        return result
-    print(result['suburl'])
-    reviews = get_reviews(result['suburl'])
+    res = requests.get(url, params=params, headers=headers)
+    if res.status_code != 200:
+        return {'error': f'Failed to get response: {res.status_code}'}
+    data = res.json()['data']['items']
+    if len(data) == 0:
+        return {'error': 'No reviews found'}
+    reviews = []
+    comments = []
+    try:
+        for review in data[offset:offset+limit]:
+            comments.append(review['quote'])
+            reviews.append({
+                'Title': review['reviewedProduct']['title'],
+                'Platform': 'Metacritic',
+                'Date': review['date'],
+                'Comment': review['quote'],
+                'Type': 'Review',
+            })
+        sentiments = getBertSentiment(comments)
+        for r, sentiment in zip(reviews, sentiments):
+            r['Sentiment'] = sentiment
+    except IndexError:
+        return {'error': 'No reviews found'}
     return reviews

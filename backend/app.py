@@ -26,20 +26,25 @@ def getAutoComplete(movie):
     cache.set(cache_key, results, timeout=60*15)
     return results
 
-@app.route('/imdb/<string:movie>', methods=['GET'])
+@app.route('/imdb/<string:imdbID>', methods=['GET'])
 @cross_origin()
-def getImdb(movie):
-    return api.get_imdb_reviews(movie)
+def getImdb(imdbID):
+    return api.get_imdb_reviews(imdbID)
 
-@app.route('/rotten-tomatoes/<string:movie>', methods=['GET'])
+@app.route('/rotten-tomatoes/<string:imdbID>', methods=['GET'])
 @cross_origin()
-def getRottenTomatoes(movie):
-    return api.get_rttm_reviews(movie)
+def getRottenTomatoes(imdbID):
+    url = api.getLink(imdbID, platform='rotten_tomatoes')
+    id = list(filter(None, url.split('/')))[-1]
+    return api.get_rttm_reviews(id)
 
-@app.route('/metacritic/<string:movie>', methods=['GET'])
+@app.route('/metacritic/<string:imdbID>', methods=['GET'])
 @cross_origin()
-def getMetacritic(movie):
-    return api.get_metacritic_reviews(movie)
+def getMetacritic(imdbID):
+    url = api.getLink(imdbID=imdbID, platform='metacritic')
+    print(url)
+    id = list(filter(None, url.split('/')))[-1]
+    return api.get_metacritic_reviews(id)
 
 if __name__ == '__main__':
     app.run(debug=True)
