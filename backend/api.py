@@ -3,7 +3,8 @@ import os
 from datetime import datetime, timedelta, date
 from bs4 import BeautifulSoup
 from fuzzywuzzy import fuzz
-from bert import getBertSentiment
+from models import getBertSentiment
+# from translate_t5 import translate_reviews
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -60,28 +61,6 @@ def getLink(imdbID: str, platform: str):
 
 def get_imdb_reviews(id:str):
 
-    # def search_movie():
-    #     url = 'https://imdb8.p.rapidapi.com/v2/search'
-    #     params = {
-    #         'searchTerm': title,
-    #         'type': 'MOVIE'
-    #     }
-    #     headers = {
-    #         'x-rapidapi-host': 'imdb8.p.rapidapi.com',
-    #         'x-rapidapi-key': API_KEY,
-    #     }
-
-    #     res = requests.get(url, params=params, headers=headers)
-    #     if (res.status_code != 200):
-    #         return {'error': f'API error: {res.status_code}'}
-    #     return res.json()['data']['mainSearch']['edges'][0]['node']['entity']
-    
-    # movie = search_movie()
-    # if not movie:
-    #     return {'error': f"Cannot find movie named {movie['titleText']['text']}"}
-    
-    # print(movie['id'], movie['titleText']['text'])
-
     url = 'https://imdb8.p.rapidapi.com/title/v2/get-user-reviews-summary'
     params = {
         'tconst':id
@@ -114,6 +93,8 @@ def get_imdb_reviews(id:str):
                     'Type': review['node']['__typename'],
                 })
         sentiments = getBertSentiment(comments)
+        # translated_comments = translate_reviews(comments)
+        # sentiments = getBertSentiment(translated_comments)
         for r, sentiment in zip(reviews, sentiments):
             r['Sentiment'] = sentiment
     except:
@@ -123,28 +104,6 @@ def get_imdb_reviews(id:str):
 
 
 def get_rttm_reviews(id:str, mode:str='user', limit:int=10, offset:int=0):
-
-    # def search_movie():
-    #     url = f'https://www.rottentomatoes.com/search'
-    #     params = {
-    #         'search': title,
-    #     }
-    #     headers = {'User-Agent': 'Mozilla/5.0'}
-    #     res = requests.get(url, params=params, headers=headers)
-    #     if res.status_code != 200:
-    #         return {'error': f'Failed to get response: {res.status_code}'}
-    #     soup = BeautifulSoup(res.text, 'html.parser')
-
-    #     movie = soup.find('search-page-media-row')
-    #     if not movie:
-    #         return {'error': f'Cannot find movie named {title}'}
-    #     tag = movie.find('a', slot='title')
-    #     movie_title = tag.text.strip()
-    #     suburl = tag['href']
-    #     return {
-    #         'title': movie_title,
-    #         'suburl': suburl
-    #     }
     url = f'https://www.rottentomatoes.com/m/{id}/reviews'
     if mode=='user':
         url = url + "?type=user"
@@ -178,8 +137,9 @@ def get_rttm_reviews(id:str, mode:str='user', limit:int=10, offset:int=0):
                     'Comment': review,
                     'Type': 'Critic' if mode =='critic' else 'Review',
                 })
-
         sentiments = getBertSentiment(comments)
+        # translated_comments = translate_reviews(comments)
+        # sentiments = getBertSentiment(translated_comments)
         for r, sentiment in zip(reviews, sentiments):
             r['Sentiment'] = sentiment
         
@@ -189,23 +149,6 @@ def get_rttm_reviews(id:str, mode:str='user', limit:int=10, offset:int=0):
 
 
 def get_metacritic_reviews(id:str, limit:int=10, offset:int=0):
-    
-    # def search_movie():
-    #     url = f'https://www.metacritic.com/search/{title}/?page=1&category=2'
-    #     headers = {'User-Agent': 'Mozilla/5.0'}
-    #     res = requests.get(url, headers=headers)
-    #     if res.status_code != 200:
-    #         return {'error': f'Failed to get response: {res.status_code}'}
-        
-    #     soup = BeautifulSoup(res.text, 'html.parser')
-    #     movie = soup.find('div', class_='g-grid-container u-grid-columns')
-    #     if not movie:
-    #         return {'error': f'Cannot find movie named {title}'}
-    #     tag = movie.find('a', {'data-testid': 'search-result-item'})
-    #     suburl = tag['href']
-    #     return {
-    #         'suburl': suburl.split('/')[2]
-    #     }
     url = f'https://backend.metacritic.com/reviews/metacritic/user/movies/{id}/web'
     
     params = {
@@ -242,6 +185,8 @@ def get_metacritic_reviews(id:str, limit:int=10, offset:int=0):
                 'Type': 'Review',
             })
         sentiments = getBertSentiment(comments)
+        # translated_comments = translate_reviews(comments)
+        # sentiments = getBertSentiment(translated_comments)
         for r, sentiment in zip(reviews, sentiments):
             r['Sentiment'] = sentiment
     except IndexError:

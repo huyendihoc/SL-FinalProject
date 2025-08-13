@@ -16,7 +16,7 @@ def getBertSentiment(reviews: str):
     tokenizer = AutoTokenizer.from_pretrained(checkpoint)
     model = AutoModelForSequenceClassification.from_pretrained(checkpoint)
 
-    inputs = tokenizer(reviews, padding=True, truncation=True, return_tensors="pt")
+    inputs = tokenizer(reviews, padding=True, truncation=True, max_length=512, return_tensors="pt")
 
     # Run inference
     with torch.no_grad():
