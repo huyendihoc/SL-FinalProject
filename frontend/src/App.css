@@ -52,7 +52,8 @@ header {
   color: white;
 }
 
-.comments-table th, .comments-table td {
+.comments-table th,
+.comments-table td {
   padding: 20px;
   text-align: left;
   border-bottom: 1px solid #444;
@@ -64,11 +65,11 @@ header {
 
 .sentiment {
   display: inline-block;
-  min-width: 100px;      
-  text-align: center;    
-  padding: 5px 10px;     
+  min-width: 100px;
+  text-align: center;
+  padding: 5px 10px;
   border-radius: 10px;
-  box-sizing: border-box; 
+  box-sizing: border-box;
 }
 
 .sentiment.positive {
@@ -232,7 +233,7 @@ header {
   height: 42px;
   color: black;
   background-color: gold;
-  font-weight:bold;
+  font-weight: bold;
   width: 100%;
 }
 
@@ -253,7 +254,7 @@ header {
 .search-result {
   display: flex;
   flex-direction: column;
-  color:	orange;
+  color: orange;
   margin-top: 100px;
   padding: 0 6vw;
   font-size: 28px;
@@ -360,4 +361,38 @@ header {
   font-size: 0.7em;
   text-align: center;
   margin-right: 15px;
+}
+
+/* Responsive chart container nếu Recharts vượt kích thước mặc định */
+.dashboard-chart-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 300px;
+  padding: 20px 0;
+}
+
+.dashboard-card {
+  background-color: #1f212b;
+  color: white;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+}
+
+.pie-chart-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.linechart-wide {
+  width: 200%;
+  transform: scale(0.5);
+  /* hoặc dùng overflow-x nếu cần */
+  transform-origin: top left;
+}
+
+.dashboard-wrapper {
+  overflow-x: auto;
+  padding: 2vh 2vw;
 }
