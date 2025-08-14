@@ -29,25 +29,52 @@ def getAutoComplete(movie):
 @app.route('/imdb/<string:imdbID>', methods=['GET'])
 @cross_origin()
 def getImdb(imdbID):
-    return api.get_imdb_reviews(imdbID)
+    reviews = api.get_imdb_reviews(imdbID)
+    return api.translate_and_sentiment(reviews)
 
 @app.route('/rotten-tomatoes/<string:imdbID>', methods=['GET'])
 @cross_origin()
 def getRottenTomatoes(imdbID):
-    url = api.getLink(imdbID, platform='Rotten Tomatoes')
-    if 'error' in url:
-        return url
-    id = list(filter(None, url.split('/')))[-1]
-    return api.get_rttm_reviews(id)
+    data = api.getLink(imdbID=imdbID)
+    platform = 'Rotten Tomatoes'
+    if platform not in data:
+        return {'error': f"{platform} not existed!"}
+    
+    id = list(filter(None, data[platform].split('/')))[-1]
+    reviews = api.get_metacritic_reviews(id)
+    return api.translate_and_sentiment(reviews)
 
 @app.route('/metacritic/<string:imdbID>', methods=['GET'])
 @cross_origin()
 def getMetacritic(imdbID):
-    url = api.getLink(imdbID=imdbID, platform='Metacritic')
-    if 'error' in url:
-        return url
-    id = list(filter(None, url.split('/')))[-1]
-    return api.get_metacritic_reviews(id)
+    data = api.getLink(imdbID=imdbID)
+    platform = 'Metacritic'
+    if platform not in data:
+        return {'error': f"This film does not exist in {platform}!"}
+    
+    id = list(filter(None, data[platform].split('/')))[-1]
+    reviews = api.get_metacritic_reviews(id)
+    return api.translate_and_sentiment(reviews)
+
+@app.route('/all/<string:imdbID>', methods=['GET'])
+@cross_origin()
+def getAllPlatforms(imdbID):
+    data = api.getLink(imdbID=imdbID)
+
+    if 'Metacritic' not in data:
+        return {"error": f"This film does not exist in Metacritic"}
+    
+    if 'Rotten Tomatoes' not in data:
+        return {'error': f'This film does not exist in Rotten Tomatoes'}
+    
+    rttm_id = list(filter(None, data['Rotten Tomatoes'].split('/')))[-1]
+    metacritic_id = list(filter(None, data['Metacritic'].split('/')))[-1]
+
+    imdb_reviews = api.get_imdb_reviews(imdbID, 100)
+    rttm_reviews = api.get_rttm_reviews(rttm_id, 100)
+    metacritic_reviews = api.get_metacritic_reviews(metacritic_id, 100)
+    reviews = imdb_reviews + rttm_reviews + metacritic_reviews
+    return api.translate_and_sentiment(reviews)
 
 if __name__ == '__main__':
     app.run(debug=True)
