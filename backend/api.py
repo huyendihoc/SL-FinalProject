@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, date
 from bs4 import BeautifulSoup
 from fuzzywuzzy import fuzz
 from models import getBertSentiment
-# from translate_t5 import translate_reviews
+from translate_t5 import translate_reviews
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -13,51 +13,65 @@ API_KEY = os.getenv('API_KEY')
 METACRITIC_KEY = os.getenv('METACRITIC_KEY')
 OMDB_KEY = os.getenv('OMDB_KEY')
 
+# def autoComplete(title:str):
+#     url = f'https://imdb236.p.rapidapi.com/api/imdb/autocomplete'
+#     params = {
+#         'query': title
+#     }
+#     headers = {
+#         'x-rapidapi-host': 'imdb236.p.rapidapi.com',
+#         'x-rapidapi-key': API_KEY,
+#     }
+#     res = requests.get(url, params=params, headers=headers)
+#     if res.status_code != 200:
+#         return {'error': f'API error: {res.status_code}'}
+#     result_list = res.json()
+#     seen_ids = set()
+#     results = []
+#     for res in result_list:
+#         if res['id'] not in seen_ids and res['type'] == 'movie':
+#             score = fuzz.token_sort_ratio(title.lower(), title.lower())
+#             results.append((score, {
+#                 "imdbID": res['id'],
+#                 "Title": res['primaryTitle'],
+#                 "Year": res['startYear'],
+#                 "Type": res['type'],
+#                 "Poster": res['primaryImage']
+#             }))
+
+#     results.sort(key=lambda x: x[0], reverse=True)
+#     return [movie for _, movie in results[:5]]
+
 def autoComplete(title:str):
-    url = f'https://imdb236.p.rapidapi.com/api/imdb/autocomplete'
+    url = f'https://omdbapi.com/'
     params = {
-        'query': title
+        'apikey': OMDB_KEY,
+        's': title,
+        'type': 'movie'
     }
-    headers = {
-        'x-rapidapi-host': 'imdb236.p.rapidapi.com',
-        'x-rapidapi-key': API_KEY,
-    }
-    res = requests.get(url, params=params, headers=headers)
+    res = requests.get(url, params=params)
     if res.status_code != 200:
         return {'error': f'API error: {res.status_code}'}
-    result_list = res.json()
-    seen_ids = set()
-    results = []
-    for res in result_list:
-        if res['id'] not in seen_ids and res['type'] == 'movie':
-            score = fuzz.token_sort_ratio(title.lower(), title.lower())
-            results.append((score, {
-                "id": res['id'],
-                "Title": res['primaryTitle'],
-                "Year": res['startYear'],
-                "Type": res['type'],
-                "Poster": res['primaryImage']
-            }))
-
-    results.sort(key=lambda x: x[0], reverse=True)
-    return [movie for _, movie in results[:5]]
+    results = res.json()['Search']
+    return sorted(results, key=lambda x: x['Year'], reverse=True)[0:5]
 
 def getLink(imdbID: str, platform: str):
-    url = 'https://movies-ratings2.p.rapidapi.com/ratings'
+    url = 'https://film-show-ratings.p.rapidapi.com/item/'
     params = {
         'id': imdbID
     }
     headers = {
-        "x-rapidapi-host": "movies-ratings2.p.rapidapi.com",
+        "x-rapidapi-host": "film-show-ratings.p.rapidapi.com",
         "x-rapidapi-key": API_KEY
     }
     res = requests.get(url, params=params, headers=headers)
     if res.status_code != 200:
         return {"error": f'API error: {res.status_code}'}
-    result = res.json()['ratings']
+    result = res.json()['result']['ids']
+    print(result)
     if platform not in result:
         return {'error': f"Platform not existed!"}
-    return result[platform]['url']  
+    return result[platform]  
 
 def get_imdb_reviews(id:str):
 
@@ -89,14 +103,14 @@ def get_imdb_reviews(id:str):
                     # 'Title': title,
                     'Platform': 'IMDb',
                     'Date': review['node']['submissionDate'],
-                    'Comment': review['node']['text']['originalText']['plainText'],
                     'Type': review['node']['__typename'],
                 })
-        sentiments = getBertSentiment(comments)
-        # translated_comments = translate_reviews(comments)
-        # sentiments = getBertSentiment(translated_comments)
-        for r, sentiment in zip(reviews, sentiments):
+        # sentiments = getBertSentiment(comments)
+        translated_comments = translate_reviews(comments)
+        sentiments = getBertSentiment(translated_comments)
+        for r, comment, sentiment in zip(reviews, translated_comments, sentiments):
             r['Sentiment'] = sentiment
+            r['Comment'] = comment
     except:
         return {'error': 'No reviews found'}
     
@@ -134,14 +148,14 @@ def get_rttm_reviews(id:str, mode:str='user', limit:int=10, offset:int=0):
                     # 'Title': title,
                     'Platform': 'Rotten Tomatoes',
                     'Date': date,
-                    'Comment': review,
                     'Type': 'Critic' if mode =='critic' else 'Review',
                 })
-        sentiments = getBertSentiment(comments)
-        # translated_comments = translate_reviews(comments)
-        # sentiments = getBertSentiment(translated_comments)
-        for r, sentiment in zip(reviews, sentiments):
+        # sentiments = getBertSentiment(comments)
+        translated_comments = translate_reviews(comments)
+        sentiments = getBertSentiment(translated_comments)
+        for r, comment, sentiment in zip(reviews, translated_comments, sentiments):
             r['Sentiment'] = sentiment
+            r['Comment'] = comment
         
     except IndexError:
         return {'error': 'Out of range'}
@@ -181,14 +195,14 @@ def get_metacritic_reviews(id:str, limit:int=10, offset:int=0):
                 'Title': review['reviewedProduct']['title'],
                 'Platform': 'Metacritic',
                 'Date': review['date'],
-                'Comment': review['quote'],
                 'Type': 'Review',
             })
-        sentiments = getBertSentiment(comments)
-        # translated_comments = translate_reviews(comments)
-        # sentiments = getBertSentiment(translated_comments)
-        for r, sentiment in zip(reviews, sentiments):
+        # sentiments = getBertSentiment(comments)
+        translated_comments = translate_reviews(comments)
+        sentiments = getBertSentiment(translated_comments)
+        for r, comment, sentiment in zip(reviews, translated_comments, sentiments):
             r['Sentiment'] = sentiment
+            r['Comment'] = comment
     except IndexError:
         return {'error': 'No reviews found'}
     return reviews

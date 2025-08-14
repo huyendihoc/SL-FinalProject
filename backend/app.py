@@ -34,15 +34,18 @@ def getImdb(imdbID):
 @app.route('/rotten-tomatoes/<string:imdbID>', methods=['GET'])
 @cross_origin()
 def getRottenTomatoes(imdbID):
-    url = api.getLink(imdbID, platform='rotten_tomatoes')
+    url = api.getLink(imdbID, platform='Rotten Tomatoes')
+    if 'error' in url:
+        return url
     id = list(filter(None, url.split('/')))[-1]
     return api.get_rttm_reviews(id)
 
 @app.route('/metacritic/<string:imdbID>', methods=['GET'])
 @cross_origin()
 def getMetacritic(imdbID):
-    url = api.getLink(imdbID=imdbID, platform='metacritic')
-    print(url)
+    url = api.getLink(imdbID=imdbID, platform='Metacritic')
+    if 'error' in url:
+        return url
     id = list(filter(None, url.split('/')))[-1]
     return api.get_metacritic_reviews(id)
 
