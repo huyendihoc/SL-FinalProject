@@ -15,7 +15,7 @@ const App = () => {
 
   const handleSearch = async () => {
     try {
-      const reviews = await fetchMovie(movie.trim(), platform);
+      const reviews = await fetchMovie(id.trim(), platform);
       setReviews(reviews);
     } catch (error) {
       console.log(error);
