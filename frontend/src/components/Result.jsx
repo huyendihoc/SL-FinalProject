@@ -1,4 +1,4 @@
-const Result = ({reviews}) => {
+const Result = ({reviews, movie}) => {
     if (reviews.length === 0) {
         return <></>
     }
@@ -12,7 +12,7 @@ const Result = ({reviews}) => {
     else {
         return (
             <span className="search-result">
-                Result: {reviews[0].Title} from {reviews[0].Platform}
+                Result: {movie} from {reviews[0].Platform}
             </span>
         )
     }

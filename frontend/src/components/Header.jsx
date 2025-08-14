@@ -29,7 +29,7 @@ const Header = ({platform, setPlatform, movie, setMovie, id, setID, handleSearch
         setSuggestions([]);
         setShowSuggestions(false);
         }
-    }, 300), []);
+    }, 1000), []);
 
     const handleInputChange = (e) => {
         const value = e.target.value;
@@ -39,7 +39,7 @@ const Header = ({platform, setPlatform, movie, setMovie, id, setID, handleSearch
 
     const handleSuggestionClick = (suggestion) => {
         setMovie(suggestion.Title);
-        setID(suggestion.id)
+        setID(suggestion.imdbID)
         setShowSuggestions(false);
     };
 
@@ -50,6 +50,7 @@ const Header = ({platform, setPlatform, movie, setMovie, id, setID, handleSearch
             setMovie('');
             setSuggestions([]);
             setShowSuggestions(false);
+            setID('')
         }
     };
 
