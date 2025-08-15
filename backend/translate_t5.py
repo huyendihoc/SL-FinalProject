@@ -33,7 +33,7 @@ def detect_and_translate(texts, lang_code=None):
 
     # Kiểm tra xem mô hình MarianMT có hỗ trợ ngôn ngữ này không
     if marian_lang_code not in supported_languages:
-        return [None] * len(texts)
+        return texts
 
     # Khởi tạo tokenizer và model cho ngôn ngữ cụ thể
     model_name = f"Helsinki-NLP/opus-mt-{marian_lang_code}-en"

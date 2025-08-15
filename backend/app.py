@@ -70,11 +70,11 @@ def getAllPlatforms(imdbID):
     rttm_id = list(filter(None, data['Rotten Tomatoes'].split('/')))[-1]
     metacritic_id = list(filter(None, data['Metacritic'].split('/')))[-1]
 
-    imdb_reviews = api.get_imdb_reviews(imdbID, 100)
-    rttm_reviews = api.get_rttm_reviews(rttm_id, 100)
-    metacritic_reviews = api.get_metacritic_reviews(metacritic_id, 100)
+    imdb_reviews = api.get_imdb_reviews(imdbID, 50)
+    rttm_reviews = api.get_rttm_reviews(rttm_id, 50)
+    metacritic_reviews = api.get_metacritic_reviews(metacritic_id, 50)
     reviews = imdb_reviews + rttm_reviews + metacritic_reviews
-    return api.translate_and_sentiment(reviews)
+    return api.getSentiment(reviews)
 
 if __name__ == '__main__':
     app.run(debug=True)

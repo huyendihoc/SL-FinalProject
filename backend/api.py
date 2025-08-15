@@ -25,6 +25,16 @@ def translate_and_sentiment(reviews:list):
         
     return reviews
 
+def getSentiment(reviews:list):
+    comments = [review['Comment'] for review in reviews]
+    sentiments = getBertSentiment(comments)
+
+    for r, comment, sentiment in zip(reviews, comments, sentiments):
+        r['Sentiment'] = sentiment
+        r['Comment'] = comment
+        
+    return reviews
+
 # Auto-complete search api
 def autoComplete(title:str):
     url = f'https://omdbapi.com/'
@@ -75,7 +85,7 @@ def get_imdb_reviews(id:str, limit:int=10):
             "filter": {},
             "first": page_size,
             "sort": {
-                "by": "HELPFULNESS_SCORE",
+                "by": "SUBMISSION_DATE",
                 "order": "DESC"
             }
         }
@@ -223,7 +233,6 @@ def get_metacritic_reviews(id:str, limit:int=10):
     try:
         for review in data[:limit]:
             reviews.append({
-                'Title': review['reviewedProduct']['title'],
                 'Platform': 'Metacritic',
                 'Date': review['date'],
                 'Type': 'Review',
