@@ -254,7 +254,7 @@ header {
 .search-result {
   display: flex;
   flex-direction: column;
-  color: orange;
+  color: white;
   margin-top: 100px;
   padding: 0 6vw;
   font-size: 28px;

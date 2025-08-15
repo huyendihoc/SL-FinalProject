@@ -94,7 +94,7 @@ const Dashboard = ({ id, reviews, setReviews }) => {
                     Back to Home
                     </Button>
                 </Grid>
-                <p>Loading…</p>
+                <span className='search-result'>Loading...</span>
             </>
         );
     }
@@ -108,7 +108,7 @@ const Dashboard = ({ id, reviews, setReviews }) => {
                     Back to Home
                     </Button>
                 </Grid>
-                <p>Failed: {error.message}</p>
+                <span className='search-result'>Failed: {error.message}</span>
             </>
         );
     }
@@ -123,7 +123,7 @@ const Dashboard = ({ id, reviews, setReviews }) => {
                     Back to Home
                     </Button>
                 </Grid>
-                <p>Failed: {reviews.error}</p>
+                <span className='search-result'>Failed: {error.message}</span>
             </>
         );
     }
