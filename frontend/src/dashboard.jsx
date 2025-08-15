@@ -1,14 +1,15 @@
 import React from 'react';
 import './App.css';
-import { Grid, Card, CardContent, Typography, Box } from '@mui/material';
+import { Grid, Card, CardContent, Typography, Box, Button } from '@mui/material';
 import {
     BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
     LineChart, Line, PieChart, Pie, Cell, Legend
 } from 'recharts';
 import dayjs from 'dayjs';
-import Header from './components/Header';
-import { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; 
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { fetchAllReviews } from './service/api';
 
 // // Fake data with multiple months of reviews
 // const fakeFilm = {
@@ -62,22 +63,67 @@ import { useParams } from 'react-router-dom';
 
 // const reviews = fakeFilm.Reviews || [];
 
-const Dashboard = ({ platform, setPlatform, movie, setMovie, handleSearch }) => {
-    const { movieId } = useParams();
-    if (!reviews || reviews.length === 0) {
+const Dashboard = ({ id, reviews, setReviews }) => {
+    const navigate = useNavigate();
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        let ignore = false;                       // tránh setState khi unmounted
+        const fetchData = async () => {
+            try {
+            const data = await fetchAllReviews(id);
+            if (!ignore) setReviews(data);
+            } catch (e) {
+            if (!ignore) setError(e);
+            } finally {
+            if (!ignore) setLoading(false);
+            }
+        };
+        fetchData();
+        return () => (ignore = true);
+    }, [id]);
+
+    if (loading) {
         return (
             <>
-                <Header
-                    platform={platform}
-                    setPlatform={setPlatform}
-                    movie={movie}
-                    setMovie={setMovie}
-                    handleSearch={handleSearch}
-                    id={movieId}
-                />
-                <Typography variant="h6" align="center" mt={4}>
-                    Không có đánh giá nào để hiển thị.
-                </Typography>
+                <div className="title-background"></div>
+                <span className="section-title">DASHBOARD</span>
+                <Grid container justifyContent="center" sx={{ mt: 2 }}>
+                    <Button variant="contained" onClick={() => navigate('/')}>
+                    Back to Home
+                    </Button>
+                </Grid>
+                <p>Loading…</p>
+            </>
+        );
+    }
+    if (error) {
+        return (
+            <>
+                <div className="title-background"></div>
+                <span className="section-title">DASHBOARD</span>
+                <Grid container justifyContent="center" sx={{ mt: 2 }}>
+                    <Button variant="contained" onClick={() => navigate('/')}>
+                    Back to Home
+                    </Button>
+                </Grid>
+                <p>Failed: {error.message}</p>
+            </>
+        );
+    }
+
+    if ('error' in reviews){
+        return (
+            <>
+                <div className="title-background"></div>
+                <span className="section-title">DASHBOARD</span>
+                <Grid container justifyContent="center" sx={{ mt: 2 }}>
+                    <Button variant="contained" onClick={() => navigate('/')}>
+                    Back to Home
+                    </Button>
+                </Grid>
+                <p>Failed: {reviews.error}</p>
             </>
         );
     }
@@ -122,13 +168,14 @@ const Dashboard = ({ platform, setPlatform, movie, setMovie, handleSearch }) => 
     return (
         <>
             {/* reuse Header */}
-            <Header
-                platform={platform}
-                setPlatform={setPlatform}
-                movie={movie}
-                setMovie={setMovie}
-                handleSearch={handleSearch}
-            />
+            <div className="title-background"></div>
+            <span className="section-title">DASHBOARD</span>
+
+            <Grid container justifyContent="center" sx={{ mt: 2 }}>
+                <Button variant="contained" onClick={() => navigate('/')}>
+                Back to Home
+                </Button>
+            </Grid>
 
             <Grid
                 container
@@ -143,7 +190,7 @@ const Dashboard = ({ platform, setPlatform, movie, setMovie, handleSearch }) => 
                     <Card>
                         <CardContent>
                             <Typography align="center" variant="h6" mb={2}>
-                                Emotional Damage
+                                Sentiment Overtime (50 lastest reviews each platform)
                             </Typography>
 
                             <ResponsiveContainer width="100%" height={350}>
@@ -171,7 +218,7 @@ const Dashboard = ({ platform, setPlatform, movie, setMovie, handleSearch }) => 
                     <Card>
                         <CardContent>
                             <Typography align="center" variant="h6" mb={2}>
-                                Tỷ lệ cảm xúc tích cực vs tiêu cực
+                                Proportions of Positive and Negative Sentiment
                             </Typography>
 
                             <ResponsiveContainer width="100%" height={350}>
