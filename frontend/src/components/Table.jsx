@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Grid, Button } from '@mui/material';
 
 const CommentCell = ({ comment }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -36,36 +38,50 @@ const CommentCell = ({ comment }) => {
   );
 };
 
-const Table = ({ reviews }) => {
+const Table = ({id, reviews}) => {
+  const navigate = useNavigate();
   if ((reviews.length === 0) || ('error' in reviews)) {
     return <></>;
   }
 
+  const onClick = () => {
+    if (id.trim() !== ''){
+      navigate(`/dashboard/${id.trim()}`)
+    }
+  }
+
   return (
-    <table className="comments-table">
-      <thead>
-        <tr>
-          <th style={{ width: '60%' }}>Comments</th>
-          <th style={{ width: '25%' }}>Date</th>
-          <th style={{ width: '15%' }}>Categorized as</th>
-        </tr>
-      </thead>
-      <tbody>
-        {reviews.map((review, index) => (
-          <tr key={index}>
-            <td>
-              <CommentCell comment={review.Comment} />
-            </td>
-            <td>{review.Date}</td>
-            <td>
-              <span className={`sentiment ${review.Sentiment.toLowerCase()}`}>
-                {review.Sentiment}
-              </span>
-            </td>
+    <>
+      <table className="comments-table">
+        <thead>
+          <tr>
+            <th style={{ width: '60%' }}>Comments</th>
+            <th style={{ width: '25%' }}>Date</th>
+            <th style={{ width: '15%' }}>Categorized as</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {reviews.map((review, index) => (
+            <tr key={index}>
+              <td>
+                <CommentCell comment={review.Comment} />
+              </td>
+              <td>{review.Date}</td>
+              <td>
+                <span className={`sentiment ${review.Sentiment.toLowerCase()}`}>
+                  {review.Sentiment}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <Grid container justifyContent="center" sx={{ mt: 2 }}>
+        <Button variant="contained" onClick={onClick}>
+          View Dashboard
+        </Button>
+      </Grid>
+    </>
   );
 };
 

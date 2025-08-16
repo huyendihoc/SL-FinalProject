@@ -10,42 +10,9 @@ from langdetect import detect
 from langcodes import Language
 
 
-# Hàm kiểm tra xem mô hình MarianMT có tồn tại cho ngôn ngữ không
-def check_marian_model(lang_code):
-    model_name = f"Helsinki-NLP/opus-mt-{lang_code}-en"
-    try:
-        response = requests.head(f"https://huggingface.co/{model_name}", timeout=5)
-        return response.status_code == 200
-    except requests.RequestException:
-        return False
-
-# Hàm lấy danh sách ngôn ngữ từ Gist và lọc các ngôn ngữ được hỗ trợ bởi MarianMT
-def fetch_supported_languages():
-    gist_url = "https://api.github.com/gists/8eb57b065ea0b098d571"
-    headers = {"Accept": "application/vnd.github+json"}
-    
-    try:
-        response = requests.get(gist_url, headers=headers)
-        response.raise_for_status()
-        gist_data = response.json()
-        
-        file_content = gist_data['files']['ISO-639-1-language.json']['content']
-        languages = json.loads(file_content)
-        
-        # Lọc các mã ngôn ngữ được hỗ trợ bởi MarianMT
-        supported_codes = []
-        for lang in languages:
-            code = lang['code']
-            if code != 'en' and check_marian_model(code):
-                supported_codes.append(code)
-        
-        return supported_codes
-    except requests.RequestException as e:
-        print(f"Error fetching Gist: {e}")
-        return ['vi', 'fr', 'es', 'zh', 'de', 'ja']  # Dự phòng nếu API thất bại
-
 # Lấy danh sách ngôn ngữ được hỗ trợ
-supported_languages = fetch_supported_languages()
+with open("../data/supported_lang.json", 'r') as f:
+    supported_languages = json.load(f)['lang']
 
 def detect_and_translate(texts, lang_code=None):
     if isinstance(texts, str):
@@ -66,7 +33,7 @@ def detect_and_translate(texts, lang_code=None):
 
     # Kiểm tra xem mô hình MarianMT có hỗ trợ ngôn ngữ này không
     if marian_lang_code not in supported_languages:
-        return [None] * len(texts)
+        return texts
 
     # Khởi tạo tokenizer và model cho ngôn ngữ cụ thể
     model_name = f"Helsinki-NLP/opus-mt-{marian_lang_code}-en"

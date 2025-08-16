@@ -5,17 +5,19 @@ import Header from './components/Header';
 import Table from './components/Table';
 import Result from './components/Result';
 import Dashboard from './Dashboard';
-import { fetchMovie } from './service/api';
+import { fetchMovie, fetchAllReviews } from './service/api';
 
 const App = () => {
   const [platform, setPlatform] = useState('imdb');
   const [movie, setMovie] = useState('');
   const [reviews, setReviews] = useState([]);
+  const [dashboardReviews, setDashboardReviews] = useState([]);
   const [id, setID] = useState('');
+  const [title, setTitle] = useState('')
 
   const handleSearch = async () => {
     try {
-      const reviews = await fetchMovie(movie.trim(), platform);
+      const reviews = await fetchMovie(id.trim(), platform);
       setReviews(reviews);
     } catch (error) {
       console.log(error);
@@ -37,9 +39,10 @@ const App = () => {
                 handleSearch={handleSearch}
                 id={id}
                 setID={setID}
+                setTitle={setTitle}
               />
-              <Result reviews={reviews} />
-              <Table reviews={reviews} />
+              <Result title={title} reviews={reviews} />
+              <Table id={id} reviews={reviews} />
             </div>
           }
         />
@@ -47,11 +50,9 @@ const App = () => {
           path="/dashboard/:movieId"
           element={
             <Dashboard
-              platform={platform}
-              setPlatform={setPlatform}
-              movie={movie}
-              setMovie={setMovie}
-              handleSearch={handleSearch}
+              id={id}
+              reviews={dashboardReviews}
+              setReviews={setDashboardReviews}
             />
           }
         />

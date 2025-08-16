@@ -20,4 +20,9 @@ const fetchSuggestions = async(query) =>{
     return [];
 }
 
-export {fetchMovie, fetchSuggestions}
+const fetchAllReviews = async(imdbID) => {
+    const res = await axios.get(`${baseURL}/all/${imdbID}`)
+    return res.data
+}
+
+export {fetchMovie, fetchSuggestions, fetchAllReviews}

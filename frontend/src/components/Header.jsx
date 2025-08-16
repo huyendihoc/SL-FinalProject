@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import { fetchSuggestions } from '../service/api';
 
-const Header = ({platform, setPlatform, movie, setMovie, id, setID, handleSearch}) => {
+const Header = ({platform, setPlatform, movie, setMovie, setID, handleSearch, setTitle}) => {
     const [suggestions, setSuggestions] = useState([])
     const [showSuggestions, setShowSuggestions] = useState(false)
     const [isLoading, setIsLoading] = useState(false);
@@ -29,7 +29,7 @@ const Header = ({platform, setPlatform, movie, setMovie, id, setID, handleSearch
         setSuggestions([]);
         setShowSuggestions(false);
         }
-    }, 300), []);
+    }, 1000), []);
 
     const handleInputChange = (e) => {
         const value = e.target.value;
@@ -39,7 +39,7 @@ const Header = ({platform, setPlatform, movie, setMovie, id, setID, handleSearch
 
     const handleSuggestionClick = (suggestion) => {
         setMovie(suggestion.Title);
-        setID(suggestion.id)
+        setID(suggestion.imdbID)
         setShowSuggestions(false);
     };
 
@@ -47,6 +47,7 @@ const Header = ({platform, setPlatform, movie, setMovie, id, setID, handleSearch
         if (movie.trim() !== '' && platform !== '') {
             console.log(`${movie} from ${platform}`);
             handleSearch();
+            setTitle(movie)
             setMovie('');
             setSuggestions([]);
             setShowSuggestions(false);

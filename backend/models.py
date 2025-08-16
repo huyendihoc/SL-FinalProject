@@ -1,33 +1,33 @@
-import requests
-import json
-from transformers import MarianMTModel, MarianTokenizer, AutoTokenizer, AutoModelForSequenceClassification
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
-import numpy as np
 from huggingface_hub import login
 import os
 from dotenv import load_dotenv
-from langdetect import detect
-from langcodes import Language
 
-def getBertSentiment(reviews: str):
+def getBertSentiment(reviews: str, batch_size=64):
     load_dotenv()
     login(token=os.getenv("HUGGINGFACE_TOKEN"))
     checkpoint = "stat-learning/film-review_roberta" 
     tokenizer = AutoTokenizer.from_pretrained(checkpoint)
     model = AutoModelForSequenceClassification.from_pretrained(checkpoint)
 
-    inputs = tokenizer(reviews, padding=True, truncation=True, max_length=512, return_tensors="pt")
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model.to(device).eval()
+    LABEL_MAP = {"0": "NEGATIVE", "1": "POSITIVE"}
+    sentiments = []
 
-    # Run inference
-    with torch.no_grad():
-        logits = model(**inputs).logits
+    for i in range(0, len(reviews), batch_size):
+        batch = reviews[i:i+batch_size]
+        toks = tokenizer(batch,
+            padding=True,
+            truncation=True,
+            max_length=512,
+            return_tensors="pt"
+        ).to(device)
 
-    label_map = {
-        "0": "NEGATIVE",
-        "1": "POSITIVE"
-    }
+        with torch.no_grad():
+            logits = model(**toks).logits
+        preds = logits.argmax(dim=-1).tolist()
+        sentiments.extend([LABEL_MAP[str(p)] for p in preds])
 
-    # Get predicted classes
-    predicted_class_ids = logits.argmax(dim=-1).tolist()
-    predicted_classes = [label_map[str(id)] for id in predicted_class_ids]
-    return predicted_classes
+    return sentiments
