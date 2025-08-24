@@ -10,7 +10,7 @@ from langdetect import detect
 from langcodes import Language
 
 
-# Lấy danh sách ngôn ngữ được hỗ trợ
+# Get supported languages list
 with open("../data/supported_lang.json", 'r') as f:
     supported_languages = json.load(f)['lang']
 
@@ -18,7 +18,7 @@ def detect_and_translate(texts, lang_code=None):
     if isinstance(texts, str):
         texts = [texts]
     
-    # Phát hiện ngôn ngữ
+    # Detect language
     if lang_code is None:
         try:
             lang_code = detect(texts[0])
@@ -27,15 +27,15 @@ def detect_and_translate(texts, lang_code=None):
     
     marian_lang_code = lang_code.split('-')[0]
 
-    # Kiểm tra nếu ngôn ngữ là tiếng Anh
+    # Check if the language is English
     if marian_lang_code == 'en':
         return texts
 
-    # Kiểm tra xem mô hình MarianMT có hỗ trợ ngôn ngữ này không
+    # Check if the language is supported
     if marian_lang_code not in supported_languages:
         return texts
 
-    # Khởi tạo tokenizer và model cho ngôn ngữ cụ thể
+    # Initialize the model and tokenizer
     model_name = f"Helsinki-NLP/opus-mt-{marian_lang_code}-en"
     try:
         tokenizer = MarianTokenizer.from_pretrained(model_name)
@@ -43,7 +43,7 @@ def detect_and_translate(texts, lang_code=None):
     except:
         return [None] * len(texts)
 
-    # Tạo bản dịch cho toàn bộ batch
+    # Create translations for the batch of texts
     inputs = tokenizer(texts, return_tensors="pt", padding=True, truncation=True)
     with torch.no_grad():
         outputs = model.generate(
@@ -57,7 +57,7 @@ def detect_and_translate(texts, lang_code=None):
     return translated_texts
 
 def translate_reviews(list_reviews):
-    # Nhóm các review theo ngôn ngữ
+    # Group reviews by detected language
     reviews_by_lang = {}
     for review in list_reviews:
         try:
@@ -67,7 +67,6 @@ def translate_reviews(list_reviews):
                 reviews_by_lang[marian_lang_code] = []
             reviews_by_lang[marian_lang_code].append(review)
         except:
-            # Nếu không phát hiện được ngôn ngữ, xử lý riêng
             reviews_by_lang.setdefault('unknown', []).append(review)
 
     translated_reviews = []
