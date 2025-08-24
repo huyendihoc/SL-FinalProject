@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, date
 from bs4 import BeautifulSoup
 from fuzzywuzzy import fuzz
 from models import getBertSentiment
-from translate_t5 import translate_reviews
+from backend.translator import translate_reviews
 from dotenv import load_dotenv
 import re
 
